@@ -58,6 +58,32 @@ describe("output formatters", () => {
 		expect(out).toContain('"weird,name"".ts"');
 	});
 
+	it("tree renderer shows model label and approx note", () => {
+		const root = buildTree(files());
+		const out = renderTree(root, "cl100k_base", {
+			useColor: false,
+			topN: 3,
+			modelLabel: "Claude Opus 4.6",
+			modelExact: false,
+		});
+		expect(out).toContain("Claude Opus 4.6");
+		expect(out).toContain("~approx");
+		expect(out).toContain("Approximate count");
+	});
+
+	it("json renderer embeds model metadata when supplied", () => {
+		const root = buildTree(files());
+		const out = renderJson(root, "o200k_base", {
+			modelId: "gpt-4o",
+			modelLabel: "GPT-4o",
+			modelExact: true,
+		});
+		const parsed = JSON.parse(out) as {
+			model?: { id: string; label: string; exact: boolean };
+		};
+		expect(parsed.model).toEqual({ id: "gpt-4o", label: "GPT-4o", exact: true });
+	});
+
 	it("table output is sorted by tokens descending", () => {
 		const root = buildTree(files());
 		const out = renderTable(root, "cl100k_base", { useColor: false, topN: 10 });

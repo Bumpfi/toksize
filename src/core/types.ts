@@ -46,6 +46,12 @@ export interface ScanOptions {
 	root: string;
 	/** Tokenizer encoding. */
 	encoding: Encoding;
+	/** Canonical model id (if the user selected one via `--model`). */
+	modelId?: string;
+	/** Human-friendly model label. */
+	modelLabel?: string;
+	/** `true` when counts are exact for the selected model. */
+	modelExact?: boolean;
 	/** Max recursion depth. `Infinity` for unlimited. */
 	depth: number;
 	/** Allowed file extensions (without dot). Empty = all. */

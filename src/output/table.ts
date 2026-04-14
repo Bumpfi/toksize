@@ -9,6 +9,8 @@ function fmtNum(n: number): string {
 interface TableOptions {
 	useColor: boolean;
 	topN: number;
+	modelLabel?: string;
+	modelExact?: boolean;
 }
 
 /**
@@ -32,7 +34,10 @@ export function renderTable(
 	const pctWidth = 6;
 
 	const lines: string[] = [];
-	const header = `toksize — ${fmtNum(root.tokens)} tokens (${encoding})`;
+	const suffix = opts.modelLabel
+		? `${opts.modelLabel}, ${encoding}${opts.modelExact ? "" : " ~approx"}`
+		: encoding;
+	const header = `toksize — ${fmtNum(root.tokens)} tokens (${suffix})`;
 	lines.push(opts.useColor ? chalk.bold(header) : header);
 	lines.push("");
 

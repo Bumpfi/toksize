@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import chalk from "chalk";
 import { cli } from "cleye";
 import { runScan } from "./commands/scan.js";
+import { listModels, resolveModel } from "./core/models.js";
 import { isSupportedEncoding } from "./core/tokenizer.js";
 import { type Encoding, type OutputFormat, type ScanOptions, ToksizeError } from "./core/types.js";
 
@@ -30,11 +31,45 @@ function splitList(value: string | undefined): string[] {
 		.filter((s) => s.length > 0);
 }
 
+/** Print the supported-model table and exit. */
+function printModels(useColor: boolean): void {
+	const rows = listModels();
+	const widths = {
+		id: Math.max(8, ...rows.map((r) => r.id.length)),
+		provider: Math.max(8, ...rows.map((r) => r.provider.length)),
+		encoding: Math.max(8, ...rows.map((r) => r.encoding.length)),
+	};
+	const header = `${"MODEL".padEnd(widths.id)}  ${"PROVIDER".padEnd(widths.provider)}  ${"ENCODING".padEnd(widths.encoding)}  ACCURACY`;
+	const out: string[] = [];
+	out.push(useColor ? chalk.bold(header) : header);
+	out.push("-".repeat(header.length));
+	for (const m of rows) {
+		const accuracy = m.exact ? "exact" : "approx";
+		const row = `${m.id.padEnd(widths.id)}  ${m.provider.padEnd(widths.provider)}  ${m.encoding.padEnd(widths.encoding)}  ${accuracy}`;
+		out.push(useColor && !m.exact ? chalk.gray(row) : row);
+	}
+	out.push("");
+	out.push(
+		useColor
+			? chalk.dim(
+					"Aliases: claude, opus, sonnet, haiku, gpt, gemini, llama, mistral, deepseek, grok",
+				)
+			: "Aliases: claude, opus, sonnet, haiku, gpt, gemini, llama, mistral, deepseek, grok",
+	);
+	process.stdout.write(`${out.join("\n")}\n`);
+}
+
 /**
  * CLI entry. Parses args and runs a scan. Always exits the process.
  */
 export async function main(argv: string[] = process.argv.slice(2)): Promise<void> {
 	const version = await readVersion();
+
+	// Tiny subcommand handling: `toksize models` lists supported models.
+	if (argv[0] === "models") {
+		printModels(process.stdout.isTTY === true);
+		return;
+	}
 
 	const argv0 = cli(
 		{
@@ -46,6 +81,11 @@ export async function main(argv: string[] = process.argv.slice(2)): Promise<void
 					type: String,
 					description: "Output format: tree | json | csv | table",
 					default: "tree",
+				},
+				model: {
+					type: String,
+					description: "Target model (overrides --encoding). Run `toksize models` for the list.",
+					default: "",
 				},
 				encoding: {
 					type: String,
@@ -98,9 +138,10 @@ export async function main(argv: string[] = process.argv.slice(2)): Promise<void
 				examples: [
 					"toksize",
 					"toksize ./src",
+					"toksize --model claude-opus-4.6",
+					"toksize --model gpt-4o --top 10",
 					"toksize --format json --output report.json",
-					"toksize --ext ts,tsx --top 10",
-					"toksize --encoding o200k_base",
+					"toksize models",
 				],
 			},
 		},
@@ -116,14 +157,33 @@ export async function main(argv: string[] = process.argv.slice(2)): Promise<void
 		);
 	}
 
-	const encodingName = argv0.flags.encoding;
-	if (!isSupportedEncoding(encodingName)) {
-		throw new ToksizeError(
-			`Invalid --encoding "${encodingName}". Use cl100k_base or o200k_base.`,
-			"BAD_ENCODING",
-		);
+	let encoding: Encoding;
+	let modelId: string | undefined;
+	let modelLabel: string | undefined;
+	let modelExact: boolean | undefined;
+
+	if (argv0.flags.model) {
+		const info = resolveModel(argv0.flags.model);
+		if (!info) {
+			throw new ToksizeError(
+				`Unknown --model "${argv0.flags.model}". Run \`toksize models\` to see the list.`,
+				"BAD_MODEL",
+			);
+		}
+		encoding = info.encoding;
+		modelId = info.id;
+		modelLabel = info.label;
+		modelExact = info.exact;
+	} else {
+		const encodingName = argv0.flags.encoding;
+		if (!isSupportedEncoding(encodingName)) {
+			throw new ToksizeError(
+				`Invalid --encoding "${encodingName}". Use cl100k_base or o200k_base.`,
+				"BAD_ENCODING",
+			);
+		}
+		encoding = encodingName;
 	}
-	const encoding: Encoding = encodingName;
 
 	const rawPath = argv0._.path ?? ".";
 	const useColor =
@@ -132,6 +192,9 @@ export async function main(argv: string[] = process.argv.slice(2)): Promise<void
 	const options: ScanOptions = {
 		root: rawPath,
 		encoding,
+		modelId,
+		modelLabel,
+		modelExact,
 		depth: Number.isFinite(argv0.flags.depth) ? argv0.flags.depth : Number.POSITIVE_INFINITY,
 		extensions: splitList(argv0.flags.ext),
 		excludes: argv0.flags.exclude,
