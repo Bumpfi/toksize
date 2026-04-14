@@ -3,7 +3,7 @@
 > Know what's eating your context window.
 
 [![npm version](https://img.shields.io/npm/v/toksize.svg)](https://www.npmjs.com/package/toksize)
-[![CI](https://github.com/toksize/toksize/actions/workflows/ci.yml/badge.svg)](https://github.com/toksize/toksize/actions/workflows/ci.yml)
+[![CI](https://github.com/Bumpfi/toksize/actions/workflows/ci.yml/badge.svg)](https://github.com/Bumpfi/toksize/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 
 A CLI that scans a project directory and reports LLM tokens per file, per folder, and for the whole tree. Think `ncdu` but for tokens instead of disk.
