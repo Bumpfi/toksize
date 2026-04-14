@@ -6,9 +6,7 @@
 	"bin": {
 		"toksize": "dist/cli.js"
 	},
-	"files": [
-		"dist"
-	],
+	"files": ["dist"],
 	"engines": {
 		"node": ">=20"
 	},
