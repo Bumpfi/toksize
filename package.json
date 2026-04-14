@@ -1,12 +1,14 @@
 {
 	"name": "toksize",
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"description": "Know what's eating your context window. Token counter for your codebase.",
 	"type": "module",
 	"bin": {
-		"toksize": "./dist/cli.js"
+		"toksize": "dist/cli.js"
 	},
-	"files": ["dist"],
+	"files": [
+		"dist"
+	],
 	"engines": {
 		"node": ">=20"
 	},
