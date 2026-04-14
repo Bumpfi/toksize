@@ -30,6 +30,8 @@ function bar(tokens: number, maxSibling: number): string {
 interface RenderOptions {
 	useColor: boolean;
 	topN: number;
+	modelLabel?: string;
+	modelExact?: boolean;
 }
 
 function renderNode(
@@ -68,8 +70,15 @@ export function renderTree(
 	opts: RenderOptions = { useColor: true, topN: 5 },
 ): string {
 	const lines: string[] = [];
-	const title = `toksize — ${fmtNum(root.tokens)} tokens (${encoding})`;
+	const suffix = opts.modelLabel
+		? `${opts.modelLabel}, ${encoding}${opts.modelExact ? "" : " ~approx"}`
+		: encoding;
+	const title = `toksize — ${fmtNum(root.tokens)} tokens (${suffix})`;
 	lines.push(opts.useColor ? chalk.bold(title) : title);
+	if (opts.modelLabel && opts.modelExact === false) {
+		const note = "Approximate count. Non-native tokenizer; expect ±10-15% drift.";
+		lines.push(opts.useColor ? chalk.dim(note) : note);
+	}
 	lines.push("");
 
 	const maxSibling = root.children.reduce((m, c) => Math.max(m, c.tokens), 0);

@@ -48,14 +48,18 @@ toksize
 # Scan a specific path
 toksize ./src
 
+# Target a specific model (aliases like `claude`, `gpt`, `gemini` work too)
+toksize --model claude-opus-4.6
+toksize --model gpt-4o
+
+# See which models are supported
+toksize models
+
 # Only TypeScript files, show top 10
 toksize --ext ts,tsx --top 10
 
 # Export JSON for post-processing
 toksize --format json --output report.json
-
-# GPT-4o tokenizer
-toksize --encoding o200k_base
 ```
 
 ## Options
@@ -63,6 +67,7 @@ toksize --encoding o200k_base
 | Flag | Description | Default |
 |------|-------------|---------|
 | `--format <fmt>` | `tree`, `json`, `csv`, or `table` | `tree` |
+| `--model <id>` | Target model (overrides `--encoding`). See below. | — |
 | `--encoding <enc>` | `cl100k_base` or `o200k_base` | `cl100k_base` |
 | `--ext <list>` | Comma-separated extensions to include | *(all)* |
 | `--depth <n>` | Max recursion depth | unlimited |
@@ -93,14 +98,28 @@ Layered, applied in order:
 
 Use `--show-skipped` to see what was dropped.
 
-## Encodings
+## Models
 
-| Encoding | Models |
-|----------|--------|
-| `cl100k_base` | GPT-4, GPT-3.5-turbo. Reasonable approximation for Claude too. |
-| `o200k_base` | GPT-4o family. |
+Pick your target with `--model`. Run `toksize models` for the full list. Aliases such as `claude`, `opus`, `sonnet`, `haiku`, `gpt`, `gemini`, `llama`, `mistral`, `deepseek`, and `grok` resolve to the latest flagship per provider.
 
-toksize does not call any API. Counts are computed locally with [`js-tiktoken`](https://github.com/dqbd/tiktoken), which ships a Wasm tokenizer — no native build step, no network.
+| Provider | Models | Accuracy |
+|----------|--------|----------|
+| OpenAI | `gpt-4o`, `gpt-4o-mini`, `o1`, `o1-mini`, `o3`, `o3-mini`, `gpt-4`, `gpt-4-turbo`, `gpt-3.5-turbo` | Exact |
+| Anthropic | `claude-opus-4.6`, `claude-sonnet-4.5`, `claude-haiku-4`, `claude-3.5-sonnet`, `claude-3-opus` | Approx (±10-15%) |
+| Google | `gemini-2.5-pro`, `gemini-2.0-flash`, `gemini-1.5-pro` | Approx (±10-15%) |
+| Meta | `llama-4`, `llama-3.3`, `llama-3.1` | Approx (±10-15%) |
+| Mistral | `mistral-large`, `mistral-small` | Approx (±10-15%) |
+| DeepSeek | `deepseek-v3`, `deepseek-r1` | Approx (±10%) |
+| xAI | `grok-3`, `grok-2` | Approx (±10-15%) |
+
+### Encodings
+
+toksize counts locally using [`js-tiktoken`](https://github.com/dqbd/tiktoken) (Wasm, no native build, no network). Two encodings ship:
+
+- `cl100k_base` — GPT-4 family + closest proxy for most non-OpenAI models.
+- `o200k_base` — GPT-4o, o1, o3. Closer proxy for Gemini.
+
+Non-OpenAI counts are approximations: the tokenizer is not native, so expect ±10-15% drift depending on content (code compresses better on every tokenizer than prose). Use `--model` to make that explicit in the output.
 
 ## Programmatic API
 

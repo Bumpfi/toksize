@@ -77,6 +77,60 @@ maybeDescribe("CLI integration", () => {
 		expect(stderr).toContain("toksize:");
 	});
 
+	it("supports --model alias", async () => {
+		const { stdout, code } = await runCli([
+			resolve(fixtures, "simple-project"),
+			"--model",
+			"claude",
+		]);
+		expect(code).toBe(0);
+		expect(stdout).toContain("Claude");
+		expect(stdout).toContain("approx");
+	});
+
+	it("shows exact label for OpenAI models", async () => {
+		const { stdout, code } = await runCli([
+			resolve(fixtures, "simple-project"),
+			"--model",
+			"gpt-4o",
+		]);
+		expect(code).toBe(0);
+		expect(stdout).toContain("GPT-4o");
+		expect(stdout).not.toContain("~approx");
+	});
+
+	it("embeds model metadata in JSON output", async () => {
+		const { stdout, code } = await runCli([
+			resolve(fixtures, "simple-project"),
+			"--model",
+			"gpt-4o",
+			"--format",
+			"json",
+		]);
+		expect(code).toBe(0);
+		const parsed = JSON.parse(stdout) as { model?: { id: string; exact: boolean } };
+		expect(parsed.model?.id).toBe("gpt-4o");
+		expect(parsed.model?.exact).toBe(true);
+	});
+
+	it("lists models with `toksize models`", async () => {
+		const { stdout, code } = await runCli(["models"]);
+		expect(code).toBe(0);
+		expect(stdout).toContain("gpt-4o");
+		expect(stdout).toContain("claude-opus-4.6");
+		expect(stdout).toContain("PROVIDER");
+	});
+
+	it("rejects an unknown model", async () => {
+		const { code, stderr } = await runCli([
+			resolve(fixtures, "simple-project"),
+			"--model",
+			"not-a-real-model",
+		]);
+		expect(code).toBe(1);
+		expect(stderr).toContain("Unknown --model");
+	});
+
 	it("rejects an invalid format", async () => {
 		const { code, stderr } = await runCli([
 			resolve(fixtures, "simple-project"),

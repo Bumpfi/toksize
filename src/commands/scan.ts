@@ -57,20 +57,25 @@ async function countAll(
  * Render the final report string for the chosen format.
  */
 function render(root: TreeNode, input: RunScanInput): string {
+	const { modelId, modelLabel, modelExact } = input.options;
 	switch (input.format) {
 		case "json":
-			return renderJson(root, input.options.encoding);
+			return renderJson(root, input.options.encoding, { modelId, modelLabel, modelExact });
 		case "csv":
 			return renderCsv(root);
 		case "table":
 			return renderTable(root, input.options.encoding, {
 				useColor: input.useColor,
 				topN: input.top,
+				modelLabel,
+				modelExact,
 			});
 		case "tree":
 			return renderTree(root, input.options.encoding, {
 				useColor: input.useColor,
 				topN: input.top,
+				modelLabel,
+				modelExact,
 			});
 		default: {
 			const exhaustive: never = input.format;
